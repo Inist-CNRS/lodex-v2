@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import compose from 'recompose/compose';
 import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
 
@@ -30,6 +29,8 @@ import StepSearch from './StepSearch';
 import StepSemantics from './StepSemantics';
 import FieldExcerpt from '../../admin/preview/field/FieldExcerpt';
 import Actions from './Actions';
+import { SCOPE_DATASET, SCOPE_GRAPHIC } from '../../../../common/scope';
+import { URI_FIELD_NAME } from '../../../../common/uris';
 
 const styles = {
     container: {
@@ -52,7 +53,6 @@ const styles = {
     title: {
         display: 'flex',
     },
-    titleLabel: {},
     closeButton: {
         position: 'absolute',
         right: 10,
@@ -76,7 +76,6 @@ class FieldEditionWizardComponent extends Component {
 
     constructor(props) {
         super(props);
-
         this.state = { step: 0 };
     }
 
@@ -90,17 +89,9 @@ class FieldEditionWizardComponent extends Component {
         }
     }
 
-    handleNextStep = () => {
-        this.setState({ step: this.state.step + 1 });
-    };
-
-    handlePreviousStep = () => {
-        this.setState({ step: this.state.step - 1 });
-    };
-
-    handleSelectStep = step => {
-        this.setState({ step });
-    };
+    handleNextStep = () => this.setState({ step: this.state.step + 1 });
+    handlePreviousStep = () => this.setState({ step: this.state.step - 1 });
+    handleSelectStep = step => this.setState({ step });
 
     handleCancel = () => {
         this.props.editField(undefined);
@@ -119,8 +110,7 @@ class FieldEditionWizardComponent extends Component {
         if (!field) return null;
 
         let steps = [];
-
-        if (field && field.name !== 'uri') {
+        if (field && field.name !== URI_FIELD_NAME) {
             steps = [
                 <StepIdentity
                     key="identity"
@@ -128,7 +118,12 @@ class FieldEditionWizardComponent extends Component {
                     isSubresourceField={!!field.subresourceId}
                 />,
                 !field.subresourceId && (
-                    <StepValue key="value" filter={filter} />
+                    <StepValue
+                        key="value"
+                        arbitraryMode={[SCOPE_DATASET, SCOPE_GRAPHIC].includes(
+                            filter,
+                        )}
+                    />
                 ),
                 <StepTransforms
                     key="transformers"
@@ -153,25 +148,6 @@ class FieldEditionWizardComponent extends Component {
                 );
         }
 
-        const actions = (
-            <Actions
-                field={field}
-                step={step}
-                stepsCount={steps.length}
-                onPreviousStep={this.handlePreviousStep}
-                onNextStep={this.handleNextStep}
-                onCancel={this.handleCancel}
-                onSave={this.handleSave}
-            />
-        );
-
-        const title = (
-            <div style={styles.title}>
-                <span>{field ? field.label : ''}</span>
-                {field && field.name !== 'uri'}
-            </div>
-        );
-
         return (
             <Dialog
                 open={!!field}
@@ -180,7 +156,10 @@ class FieldEditionWizardComponent extends Component {
                 maxWidth="xl"
             >
                 <DialogTitle>
-                    {title}
+                    <div style={styles.title}>
+                        <span>{field ? field.label : ''}</span>
+                        {field && field.name !== 'uri'}
+                    </div>
                     <IconButton
                         aria-label="close"
                         style={styles.closeButton}
@@ -193,7 +172,7 @@ class FieldEditionWizardComponent extends Component {
                     {field && (
                         <div style={styles.container}>
                             <div id="field_form" style={styles.form}>
-                                {field.name !== 'uri' ? (
+                                {field.name !== URI_FIELD_NAME ? (
                                     <Stepper
                                         nonLinear
                                         activeStep={step}
@@ -214,7 +193,17 @@ class FieldEditionWizardComponent extends Component {
                         </div>
                     )}
                 </DialogContent>
-                <DialogActions>{actions}</DialogActions>
+                <DialogActions>
+                    <Actions
+                        field={field}
+                        step={step}
+                        stepsCount={steps.length}
+                        onPreviousStep={this.handlePreviousStep}
+                        onNextStep={this.handleNextStep}
+                        onCancel={this.handleCancel}
+                        onSave={this.handleSave}
+                    />
+                </DialogActions>
             </Dialog>
         );
     }
@@ -241,6 +230,7 @@ const mapDispatchToProps = {
     handleHideExistingColumns: hideAddColumns,
 };
 
-export default compose(connect(mapStateToProps, mapDispatchToProps))(
-    FieldEditionWizardComponent,
-);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps,
+)(FieldEditionWizardComponent);
