@@ -9,7 +9,7 @@ import { dumpDataset } from '../../admin/dump';
 import { polyglot as polyglotPropTypes } from '../../propTypes';
 
 const ExportDatasetButtonComponent = ({ dumpDataset, p: polyglot }) => (
-    <Button variant="contained" color="primary" onClick={dumpDataset}>
+    <Button variant="contained" fullWidth color="primary" onClick={dumpDataset}>
         {polyglot.t('export_raw_dataset')}
     </Button>
 );

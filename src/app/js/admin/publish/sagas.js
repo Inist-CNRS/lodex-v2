@@ -1,5 +1,9 @@
 import { call, put, take, race, select, takeLatest } from 'redux-saga/effects';
 
+import { fromUser } from '../../sharedSelectors';
+import fetchSaga from '../../lib/sagas/fetchSaga';
+import { FINISH_PROGRESS, ERROR_PROGRESS } from '../progress/reducer';
+
 import {
     PUBLISH,
     PUBLISH_CONFIRM,
@@ -8,11 +12,8 @@ import {
     publishError,
     publishWarn,
 } from './';
-import { fromUser } from '../../sharedSelectors';
-import fetchSaga from '../../lib/sagas/fetchSaga';
-import { FINISH_PROGRESS, ERROR_PROGRESS } from '../progress/reducer';
 
-export function* handlePublishRequest() {
+export function* handlePublishRequest({ payload }) {
     const verifyUriRequest = yield select(fromUser.getVerifyUriRequest);
     const verifyResponse = yield call(fetchSaga, verifyUriRequest);
 
@@ -32,7 +33,7 @@ export function* handlePublishRequest() {
 
     const needWarn = nbInvalidUri > 0 || countInvalidSubresourceUri > 0;
 
-    if (needWarn) {
+    if (needWarn && !payload.ignoreWarn) {
         yield put(publishWarn({ nbInvalidUri, nbInvalidSubresourceUriMap }));
         const { cancel } = yield race({
             cancel: take(PUBLISH_CANCEL),
